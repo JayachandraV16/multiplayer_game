@@ -69,6 +69,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', token);
         setAuthToken(token);
         setUser(actualUser);
+        setLoading(false);
         return { success: true };
       }
     } catch (err) {
@@ -102,6 +103,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', token);
         setAuthToken(token);
         setUser(actualUser);
+        setLoading(false);
         return { success: true };
       }
     } catch (err) {
