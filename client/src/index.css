@@ -1,0 +1,149 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@theme {
+  --color-gold: #d4af37;
+  --color-gold-dark: #b8901c;
+  --color-gold-light: #f3e5ab;
+  --color-royal-blue: #0f2042;
+  --color-royal-blue-light: #1c356e;
+  --color-royal-blue-dark: #070f21;
+  --color-maroon: #1a0b0d;
+  --color-maroon-light: #3d1418;
+  --color-maroon-dark: #0a0405;
+  --color-parchment: #f4efe2;
+  --color-parchment-dark: #ded5b8;
+
+  --font-display: 'Cinzel', serif;
+  --font-sans: 'Outfit', sans-serif;
+}
+
+/* Custom Base Styles */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-maroon-dark);
+  color: var(--color-parchment);
+  margin: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display);
+}
+
+/* Custom Utilities */
+.parchment-bg {
+  background-color: var(--color-parchment);
+  background-image: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.05) 100%);
+  color: var(--color-maroon-dark);
+}
+
+.heritage-card {
+  background: rgba(15, 32, 66, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.heritage-card-maroon {
+  background: rgba(26, 11, 13, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+}
+
+.gold-border {
+  border-color: var(--color-gold);
+}
+
+.gold-glow {
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+}
+
+.gold-text-glow {
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+}
+
+.gold-gradient-bg {
+  background: linear-gradient(135deg, var(--color-gold-light) 0%, var(--color-gold) 50%, var(--color-gold-dark) 100%);
+}
+
+.maroon-gradient-bg {
+  background: linear-gradient(135deg, var(--color-maroon-light) 0%, var(--color-maroon) 50%, var(--color-maroon-dark) 100%);
+}
+
+.blue-gradient-bg {
+  background: linear-gradient(135deg, var(--color-royal-blue-light) 0%, var(--color-royal-blue) 50%, var(--color-royal-blue-dark) 100%);
+}
+
+/* Button aesthetics */
+.btn-heritage {
+  background: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%);
+  color: var(--color-maroon-dark);
+  font-family: var(--font-display);
+  font-weight: 700;
+  border: 1px solid var(--color-gold-light);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-heritage:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+  background: linear-gradient(135deg, var(--color-gold-light) 0%, var(--color-gold) 100%);
+}
+
+.btn-heritage-outline {
+  background: transparent;
+  color: var(--color-gold);
+  font-family: var(--font-display);
+  font-weight: 600;
+  border: 1px solid var(--color-gold);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-heritage-outline:hover {
+  background: rgba(212, 175, 55, 0.1);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.btn-maroon {
+  background: linear-gradient(135deg, var(--color-maroon-light) 0%, var(--color-maroon) 100%);
+  color: var(--color-parchment);
+  font-family: var(--font-display);
+  font-weight: 600;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-maroon:hover {
+  background: linear-gradient(135deg, var(--color-maroon) 0%, var(--color-maroon-dark) 100%);
+  border-color: var(--color-gold);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-maroon-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-maroon-light);
+  border: 1px solid var(--color-gold);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
