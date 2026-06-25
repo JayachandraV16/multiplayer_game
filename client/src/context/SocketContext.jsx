@@ -13,7 +13,8 @@ export const SocketProvider = ({ children }) => {
     
     // Only connect if user is logged in
     if (user) {
-      newSocket = io('http://localhost:5000');
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+      newSocket = io(socketUrl);
       setSocket(newSocket);
       console.log('Socket initialized for user:', user.name);
 
