@@ -569,6 +569,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
   // Question overlay
   const [questionModal,    setQuestionModal]    = useState(false);
   const [currentQuestion,  setCurrentQuestion]  = useState(null);
+  const [questionLoading,  setQuestionLoading]  = useState(false);
   const [selectedOption,   setSelectedOption]   = useState(null);
   const [questionTimer,    setQuestionTimer]    = useState(15);
   const [questionFeedback, setQuestionFeedback] = useState(null);
@@ -726,6 +727,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
     });
 
     setIsLevelCleared(false);
+    setQuestionLoading(false);
     setTimeout(() => {
       renderWallsOffscreen();
     }, 0);
@@ -1169,6 +1171,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
     // Pause physics/movement updates synchronously in the Ref to prevent ghost collision race conditions
     gameStateRef.current.isPausedForQuestion = true;
     setIsPlaying(false);
+    setQuestionLoading(true);
     setSelectedOption(null);
     setQuestionFeedback(null);
     setQuestionTimer(15);
@@ -1177,6 +1180,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
       const res = await axios.get(`${API_URL}/questions/random?count=1`);
       if (res.data.success && res.data.questions.length > 0) {
         setCurrentQuestion(res.data.questions[0]);
+        setQuestionLoading(false);
         setQuestionModal(true);
 
         clearInterval(questionTimerInterval.current);
@@ -1191,11 +1195,13 @@ const SutradharMaze = ({ onBackToDashboard }) => {
           });
         }, 1000);
       } else {
+        setQuestionLoading(false);
         gameStateRef.current.isPausedForQuestion = false;
         setIsPlaying(true);
       }
     } catch (err) {
       console.error('Error fetching question:', err);
+      setQuestionLoading(false);
       gameStateRef.current.isPausedForQuestion = false;
       setIsPlaying(true);
     }
@@ -1289,7 +1295,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
     <div className="flex flex-col items-center justify-center p-4 min-h-[80vh]">
 
       {/* ── 1. Pre-game Config Screen ─────────────────────────────────────── */}
-      {!isPlaying && !isGameOver && !isGameWon && !questionModal && (
+      {!isPlaying && !isGameOver && !isGameWon && !questionModal && !questionLoading && (
         <div className="heritage-card p-8 rounded-lg max-w-lg w-full text-center border gold-border">
           <h2 className="text-3xl text-gold font-display mb-2">Sutradhar's Maze</h2>
           <p className="text-sm text-parchment-dark mb-6 leading-relaxed">
@@ -1380,7 +1386,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
       )}
 
       {/* ── 2. Active Game Screen ─────────────────────────────────────────── */}
-      {(isPlaying || questionModal || isGameOver || isGameWon || isLevelCleared) && (
+      {(isPlaying || questionModal || isGameOver || isGameWon || isLevelCleared || questionLoading) && (
         <div className="flex flex-col items-center">
 
           {/* Top Info Bar */}
@@ -1428,6 +1434,17 @@ const SutradharMaze = ({ onBackToDashboard }) => {
               className="block rounded w-full h-auto object-contain mx-auto"
               style={{ background: THEME[mapTheme]?.bg || '#0a0405' }}
             />
+
+            {/* Loading Question Overlay */}
+            {questionLoading && (
+              <div className="absolute inset-0 bg-maroon-dark/95 flex flex-col items-center justify-center p-6 z-20 border border-gold animate-fade-in">
+                <div className="w-12 h-12 rounded-full border-2 border-gold border-t-transparent animate-spin mb-4"></div>
+                <div className="text-amber-300 text-xs font-display tracking-widest uppercase mb-1 animate-pulse">
+                  ✦ Decoding Ancient Inscriptions ✦
+                </div>
+                <p className="text-xs text-parchment-dark">Consulting the archives...</p>
+              </div>
+            )}
 
             {/* Mobile D-Pad */}
             <div className="flex justify-center gap-2 mt-4 md:hidden">
