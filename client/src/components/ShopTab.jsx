@@ -92,14 +92,14 @@ const ShopTab = () => {
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       {/* Balances Display */}
-      <div className="flex justify-between items-center bg-royal-blue-dark border border-royal-blue-light p-4 rounded-lg mb-6">
-        <h2 className="text-2xl text-gold font-display">Bazaar of Bharat</h2>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-1.5 text-gold font-semibold font-display">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-royal-blue-dark border border-royal-blue-light p-4 rounded-lg mb-6">
+        <h2 className="text-xl sm:text-2xl text-gold font-display">Bazaar of Bharat</h2>
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-1.5 text-gold font-semibold font-display text-sm sm:text-base">
             <Coins className="text-gold" />
             <span>{user?.coins || 0} Coins</span>
           </div>
-          <div className="flex items-center gap-1.5 text-cyan-400 font-semibold font-display">
+          <div className="flex items-center gap-1.5 text-cyan-400 font-semibold font-display text-sm sm:text-base">
             <Gem className="text-cyan-400" />
             <span>{user?.diamonds || 0} Diamonds</span>
           </div>

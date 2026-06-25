@@ -1,13 +1,14 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, lazy, Suspense } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import SutradharCharacter from '../components/SutradharCharacter';
-import SutradharMaze from '../components/SutradharMaze';
-import ChorSipahi from '../components/ChorSipahi';
-import ShopTab from '../components/ShopTab';
-import InventoryTab from '../components/InventoryTab';
-import LeaderboardTab from '../components/LeaderboardTab';
-import ProfileTab from '../components/ProfileTab';
 import { Coins, Gem, LogOut, Home, ShoppingBag, FolderOpen, BarChart3, User2 } from 'lucide-react';
+
+const SutradharMaze = lazy(() => import('../components/SutradharMaze'));
+const ChorSipahi = lazy(() => import('../components/ChorSipahi'));
+const ShopTab = lazy(() => import('../components/ShopTab'));
+const InventoryTab = lazy(() => import('../components/InventoryTab'));
+const LeaderboardTab = lazy(() => import('../components/LeaderboardTab'));
+const ProfileTab = lazy(() => import('../components/ProfileTab'));
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
@@ -131,7 +132,14 @@ const Dashboard = () => {
 
       {/* 2. Main Workspace Layout */}
       <main className="flex-1 p-6 overflow-y-auto">
-        {renderTabContent()}
+        <Suspense fallback={
+          <div className="flex flex-col items-center justify-center py-20 text-gold font-display gap-4">
+            <div className="w-10 h-10 rounded-full border-2 border-gold border-t-transparent animate-spin"></div>
+            <p className="text-xs uppercase tracking-widest animate-pulse">Unrolling archives...</p>
+          </div>
+        }>
+          {renderTabContent()}
+        </Suspense>
       </main>
 
       {/* 3. Bottom Tab Selector */}

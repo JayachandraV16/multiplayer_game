@@ -600,6 +600,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
     screenFlashTimer: 0,
     enragedTimer: 0,
     shieldTimer: 0,
+    isPausedForQuestion: false,
   });
 
   // ── Pre-render static walls offscreen ──────────────────────────────────────
@@ -697,6 +698,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
     gameStateRef.current.screenFlashTimer = 0;
     gameStateRef.current.enragedTimer = 0;
     gameStateRef.current.shieldTimer = 0;
+    gameStateRef.current.isPausedForQuestion = false;
 
     const ghostConfigs = [
       { name: 'Bhrama', color: '#ec4899', baseSpeed: 0.035, type: 'chaser' },
@@ -757,6 +759,13 @@ const SutradharMaze = ({ onBackToDashboard }) => {
   useEffect(() => {
     initLevelData();
   }, [level]);
+
+  // Trigger trivia question on every 2nd collected memory fragment
+  useEffect(() => {
+    if (fragmentsCollected > 0 && fragmentsCollected % 2 === 0) {
+      triggerTriviaQuestion();
+    }
+  }, [fragmentsCollected]);
 
   // ── Keyboard handlers ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -910,11 +919,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
         }
 
         if (itemType === 'fragment') {
-          setFragmentsCollected(prev => {
-            const nv = prev + 1;
-            if (nv > 0 && nv % 2 === 0) triggerTriviaQuestion();
-            return nv;
-          });
+          setFragmentsCollected(prev => prev + 1);
         }
 
         let displayColor = '#ffffff';
@@ -1147,7 +1152,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
       state.frame = (state.frame + 1) % 3600;
 
       // Only update positions/collisions if the game is active (not paused for question or level transition)
-      if (isPlaying && !questionModal && !isGameOver && !isGameWon && !isLevelCleared) {
+      if (isPlaying && !questionModal && !isGameOver && !isGameWon && !isLevelCleared && !state.isPausedForQuestion) {
         update();
       }
       draw();
@@ -1161,6 +1166,8 @@ const SutradharMaze = ({ onBackToDashboard }) => {
   const triggerTriviaQuestion = async () => {
     if (isGameOver || isGameWon) return;
 
+    // Pause physics/movement updates synchronously in the Ref to prevent ghost collision race conditions
+    gameStateRef.current.isPausedForQuestion = true;
     setIsPlaying(false);
     setSelectedOption(null);
     setQuestionFeedback(null);
@@ -1184,10 +1191,12 @@ const SutradharMaze = ({ onBackToDashboard }) => {
           });
         }, 1000);
       } else {
+        gameStateRef.current.isPausedForQuestion = false;
         setIsPlaying(true);
       }
     } catch (err) {
       console.error('Error fetching question:', err);
+      gameStateRef.current.isPausedForQuestion = false;
       setIsPlaying(true);
     }
   };
@@ -1226,6 +1235,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
     setTimeout(() => {
       setQuestionModal(false);
       setCurrentQuestion(null);
+      gameStateRef.current.isPausedForQuestion = false; // Reset the pause Ref!
       if (heartsRef.current > 0 && !isGameOver && !isGameWon) {
         setIsPlaying(true);
       }
@@ -1292,7 +1302,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
           {/* Map Theme Selector / Starting Level */}
           <div className="mb-6">
             <label className="block text-gold font-display text-sm mb-2 text-left">Select Starting Realm:</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {Object.entries(themeLabels).map(([key, label]) => {
                 const targetLvl = THEME_LEVELS[key] || 1;
                 return (
@@ -1374,8 +1384,8 @@ const SutradharMaze = ({ onBackToDashboard }) => {
         <div className="flex flex-col items-center">
 
           {/* Top Info Bar */}
-          <div className="flex items-center justify-between w-full max-w-[736px] bg-royal-blue-dark border border-royal-blue-light px-4 py-2 rounded-t-lg text-sm mb-0">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full max-w-[736px] bg-royal-blue-dark border border-royal-blue-light px-4 py-2 sm:py-3 rounded-t-lg text-sm mb-0">
+            <div className="flex flex-wrap items-center justify-center gap-4">
               <span className="flex items-center text-red-500 font-semibold gap-1">
                 <Heart size={15} className="fill-red-500" /> {hearts}
               </span>
@@ -1387,7 +1397,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
               {speedBoost && (
                 <span className="flex items-center text-yellow-400 font-semibold text-xs gap-0.5 animate-pulse">
                   <Zap size={13} /> Speed
@@ -1421,14 +1431,14 @@ const SutradharMaze = ({ onBackToDashboard }) => {
 
             {/* Mobile D-Pad */}
             <div className="flex justify-center gap-2 mt-4 md:hidden">
-              <div className="grid grid-cols-3 gap-1 w-32">
+              <div className="grid grid-cols-3 gap-2 w-44">
                 <div></div>
                 <button 
                   onMouseDown={() => { gameStateRef.current.activeKeys['ArrowUp'] = true; }}
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowUp']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowUp'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowUp']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-2 text-center rounded active:bg-gold active:text-maroon-dark"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
                 >
                   ▲
                 </button>
@@ -1439,17 +1449,17 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowLeft']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowLeft'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowLeft']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-2 text-center rounded active:bg-gold active:text-maroon-dark"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
                 >
                   ◀
                 </button>
-                <div className="flex items-center justify-center text-xs text-parchment-dark font-display">Keys</div>
+                <div className="flex items-center justify-center text-xs text-parchment-dark font-display select-none">Keys</div>
                 <button 
                   onMouseDown={() => { gameStateRef.current.activeKeys['ArrowRight'] = true; }}
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowRight']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowRight'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowRight']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-2 text-center rounded active:bg-gold active:text-maroon-dark"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
                 >
                   ▶
                 </button>
@@ -1460,7 +1470,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowDown']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowDown'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowDown']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-2 text-center rounded active:bg-gold active:text-maroon-dark"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
                 >
                   ▼
                 </button>
