@@ -1668,7 +1668,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
 
             {/* Loading Question Overlay */}
             {questionLoading && (
-              <div className="absolute inset-0 bg-maroon-dark/95 flex flex-col items-center justify-center p-6 z-20 border border-gold animate-fade-in">
+              <div className="fixed inset-0 bg-maroon-dark/95 backdrop-blur-md flex flex-col items-center justify-center p-4 z-50 animate-fade-in">
                 <div className="w-12 h-12 rounded-full border-2 border-gold border-t-transparent animate-spin mb-4"></div>
                 <div className="text-amber-300 text-xs font-display tracking-widest uppercase mb-1 animate-pulse">
                   ✦ Decoding Ancient Inscriptions ✦
@@ -1686,7 +1686,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowUp']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowUp'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowUp']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg cursor-pointer"
                 >
                   ▲
                 </button>
@@ -1697,7 +1697,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowLeft']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowLeft'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowLeft']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg cursor-pointer"
                 >
                   ◀
                 </button>
@@ -1707,7 +1707,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowRight']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowRight'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowRight']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg cursor-pointer"
                 >
                   ▶
                 </button>
@@ -1718,7 +1718,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   onMouseUp={() => { delete gameStateRef.current.activeKeys['ArrowDown']; }}
                   onTouchStart={(e) => { e.preventDefault(); gameStateRef.current.activeKeys['ArrowDown'] = true; }}
                   onTouchEnd={(e) => { e.preventDefault(); delete gameStateRef.current.activeKeys['ArrowDown']; }}
-                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg"
+                  className="bg-royal-blue border border-gold text-gold font-bold p-3 text-center rounded active:bg-gold active:text-maroon-dark text-lg select-none shadow-lg cursor-pointer"
                 >
                   ▼
                 </button>
@@ -1732,7 +1732,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
 
             {/* ── 3. Trivia Question Modal ─────────────────────────────────── */}
             {questionModal && currentQuestion && (
-              <div className="absolute inset-0 bg-maroon-dark/96 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-10">
+              <div className="fixed inset-0 bg-maroon-dark/98 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center z-50 overflow-y-auto">
                 <div className="flex justify-between items-center w-full max-w-md mb-3">
                   <span className="text-gold font-display text-xs border border-gold/30 px-2 py-0.5 rounded capitalize">
                     {currentQuestion.category?.replace('_', ' ')}
@@ -1766,7 +1766,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                         key={idx}
                         disabled={questionFeedback !== null}
                         onClick={() => handleTriviaAnswer(opt)}
-                        className={`px-4 py-2.5 border rounded text-sm transition-all text-left ${btnStyle}`}
+                        className="px-4 py-2.5 border rounded text-sm transition-all text-left cursor-pointer disabled:cursor-not-allowed"
                       >
                         {opt}
                       </button>
@@ -1789,7 +1789,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
 
             {/* ── 4. Game Over Overlay ─────────────────────────────────────── */}
             {isGameOver && (
-              <div className="absolute inset-0 bg-black/92 flex flex-col items-center justify-center p-6 text-center z-10">
+              <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center z-50 overflow-y-auto">
                 <h3 className="text-4xl text-red-500 font-display font-black mb-1">GAME OVER</h3>
                 <p className="text-sm text-parchment-dark mb-6">Vismarana has consumed all memories…</p>
 
@@ -1812,7 +1812,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   <button
                     disabled={(user?.coins || 0) < 50}
                     onClick={handleRevive}
-                    className="btn-heritage py-2 w-full flex items-center justify-center gap-1.5 disabled:opacity-50"
+                    className="btn-heritage py-2 w-full flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     <RotateCcw size={15} /> Revive for 50 Coins
                   </button>
@@ -1821,7 +1821,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                   </p>
                   <button
                     onClick={() => { resetGameData(); onBackToDashboard(); }}
-                    className="btn-heritage-outline py-2 w-full"
+                    className="btn-heritage-outline py-2 w-full cursor-pointer"
                   >
                     Return to Dashboard
                   </button>
@@ -1831,7 +1831,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
 
             {/* ── 5. Victory Overlay ───────────────────────────────────────── */}
             {isGameWon && (
-              <div className="absolute inset-0 bg-maroon-dark/96 flex flex-col items-center justify-center p-6 text-center z-10 border border-gold animate-fade-in">
+              <div className="fixed inset-0 bg-maroon-dark/98 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center z-50 overflow-y-auto animate-fade-in">
                 <div className="text-amber-300 text-xs font-display tracking-widest uppercase mb-2 animate-pulse">
                   ✦ Ancient Heritage Restored ✦
                 </div>
@@ -1860,13 +1860,13 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                 <div className="flex gap-3 w-full max-w-xs">
                   <button
                     onClick={() => { resetGameData(); setIsPlaying(true); }}
-                    className="flex-1 btn-heritage py-2 text-xs"
+                    className="flex-1 btn-heritage py-2 text-xs cursor-pointer"
                   >
                     Play Again
                   </button>
                   <button
                     onClick={() => { resetGameData(); onBackToDashboard(); }}
-                    className="flex-1 btn-heritage-outline py-2 text-xs"
+                    className="flex-1 btn-heritage-outline py-2 text-xs cursor-pointer"
                   >
                     Dashboard
                   </button>
@@ -1876,7 +1876,7 @@ const SutradharMaze = ({ onBackToDashboard }) => {
 
             {/* ── 6. Level Transition Overlay ────────────────────────────── */}
             {isLevelCleared && (
-              <div className="absolute inset-0 bg-maroon-dark/96 flex flex-col items-center justify-center p-6 text-center z-10 border border-gold animate-fade-in">
+              <div className="fixed inset-0 bg-maroon-dark/98 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center z-50 overflow-y-auto animate-fade-in">
                 <div className="text-amber-300 text-xs font-display tracking-widest uppercase mb-2 animate-pulse">
                   ✦ Realm Restored ✦
                 </div>
@@ -1909,13 +1909,13 @@ const SutradharMaze = ({ onBackToDashboard }) => {
                       setLevel(prev => prev + 1);
                       setIsPlaying(true);
                     }}
-                    className="btn-heritage py-2 w-full flex items-center justify-center gap-2"
+                    className="btn-heritage py-2 w-full flex items-center justify-center gap-2 cursor-pointer"
                   >
                     Advance to Level {level + 1} →
                   </button>
                   <button
                     onClick={() => { resetGameData(); onBackToDashboard(); }}
-                    className="btn-heritage-outline py-2 w-full text-xs"
+                    className="btn-heritage-outline py-2 w-full text-xs cursor-pointer"
                   >
                     Return to Dashboard
                   </button>

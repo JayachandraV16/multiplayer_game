@@ -272,7 +272,7 @@ const ChorSipahi = ({ onBackToDashboard }) => {
             <h4 className="text-sm font-display text-gold mb-2 flex items-center gap-1.5">
               <Users size={16} /> Players ({room.players.length}/6)
             </h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {room.players.map((player) => {
                 const isHost = player.id === room.hostId;
                 const isYou = player.id === socket.id;
@@ -337,7 +337,7 @@ const ChorSipahi = ({ onBackToDashboard }) => {
       {room && room.gameState === 'PLAYING' && currentQuestion && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {/* Main Question Panel */}
-          <div className="md:col-span-2 heritage-card p-6 rounded-lg border gold-border flex flex-col justify-between min-h-[400px]">
+          <div className="md:col-span-2 heritage-card p-4 sm:p-6 rounded-lg border gold-border flex flex-col justify-between min-h-[320px] md:min-h-[400px]">
             <div>
               <div className="flex justify-between items-center border-b border-royal-blue-light pb-2 mb-4">
                 <span className="text-xs text-gold font-display uppercase tracking-wider">
@@ -465,7 +465,7 @@ const ChorSipahi = ({ onBackToDashboard }) => {
       {room && room.gameState === 'VOTING' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           {/* Accusation / Voting Panel */}
-          <div className="md:col-span-2 heritage-card p-6 rounded-lg border gold-border flex flex-col justify-between min-h-[400px]">
+          <div className="md:col-span-2 heritage-card p-4 sm:p-6 rounded-lg border gold-border flex flex-col justify-between min-h-[320px] md:min-h-[400px]">
             <div>
               <div className="flex justify-between items-center border-b border-royal-blue-light pb-2 mb-4">
                 <h3 className="text-lg text-gold font-display flex items-center gap-1.5">
@@ -528,12 +528,12 @@ const ChorSipahi = ({ onBackToDashboard }) => {
           </div>
 
           {/* Active Chat Panel */}
-          <div className="heritage-card p-4 rounded-lg border gold-border flex flex-col justify-between min-h-[400px]">
+          <div className="heritage-card p-4 rounded-lg border gold-border flex flex-col justify-between min-h-[300px] md:min-h-[400px]">
             <div>
               <h4 className="text-sm font-display text-gold mb-2 border-b border-royal-blue-light pb-2 flex items-center gap-1">
                 <MessageSquare size={14} /> Room Discussion
               </h4>
-              <div className="h-64 overflow-y-auto pr-1 flex flex-col gap-2 mb-3">
+              <div className="h-44 md:h-64 overflow-y-auto pr-1 flex flex-col gap-2 mb-3">
                 {chatMessages.map((msg, idx) => (
                   <div key={idx} className="bg-royal-blue-dark/60 border border-royal-blue-light/50 p-2 rounded text-xs leading-normal">
                     <div className="flex justify-between items-center mb-0.5">

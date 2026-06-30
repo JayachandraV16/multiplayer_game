@@ -84,11 +84,11 @@ const InventoryTab = () => {
       {/* Boosters Row */}
       <div className="mb-8">
         <h3 className="text-lg text-gold font-display mb-3">Power Boosters</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           
           <div className="heritage-card p-4 rounded border flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-cyan-950/40 p-2.5 border border-cyan-900 rounded">
+              <div className="bg-cyan-950/40 p-2.5 border border-cyan-900 rounded shrink-0">
                 <Shield className="text-cyan-400" />
               </div>
               <div>
@@ -103,7 +103,7 @@ const InventoryTab = () => {
 
           <div className="heritage-card p-4 rounded border flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-amber-950/40 p-2.5 border border-amber-900 rounded">
+              <div className="bg-amber-950/40 p-2.5 border border-amber-900 rounded shrink-0">
                 <HelpCircle className="text-amber-500" />
               </div>
               <div>
@@ -112,8 +112,6 @@ const InventoryTab = () => {
               </div>
             </div>
             <span className="text-xl font-bold font-display text-gold bg-amber-950/60 border border-gold/30 px-3 py-1 rounded">
-              {user?.hearts || 0} {/* Wait, let's keep track of hearts or hints. In User model we have hearts. Hints are consumed in-game. */}
-              {/* Wait! In the shop purchase item, buying hint increments nothing on user schema because they are purchased inside game? Actually, they can buy hints in shop too! But let's show user hearts here as their persistent hearts. */}
               {user?.hearts || 0} Hearts
             </span>
           </div>
@@ -132,12 +130,12 @@ const InventoryTab = () => {
             return (
               <div
                 key={skinId}
-                className={`p-4 rounded border flex items-center justify-between transition-all ${
+                className={`p-4 rounded border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 transition-all ${
                   isActive ? 'border-gold bg-royal-blue/30' : 'border-royal-blue-light bg-royal-blue-dark/50'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full border flex items-center justify-center font-bold text-white shadow ${skin.color}`}>
+                  <div className={`w-10 h-10 rounded-full border flex items-center justify-center font-bold text-white shadow shrink-0 ${skin.color}`}>
                     <User size={18} />
                   </div>
                   <div>
@@ -147,11 +145,11 @@ const InventoryTab = () => {
                 </div>
 
                 {isActive ? (
-                  <span className="text-xs text-emerald-400 font-semibold flex items-center gap-0.5"><Check size={14} /> Equipped</span>
+                  <span className="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-0.5 w-full sm:w-auto py-1"><Check size={14} /> Equipped</span>
                 ) : (
                   <button
                     onClick={() => handleEquipSkin(skinId)}
-                    className="btn-heritage-outline px-3 py-1 text-xs"
+                    className="btn-heritage-outline px-3 py-1.5 text-xs w-full sm:w-auto cursor-pointer"
                   >
                     Equip
                   </button>

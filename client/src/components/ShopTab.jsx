@@ -123,9 +123,9 @@ const ShopTab = () => {
           <div className="flex flex-col gap-4">
             
             {/* Heart */}
-            <div className="heritage-card p-4 rounded border flex justify-between items-center">
+            <div className="heritage-card p-4 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-3">
-                <div className="bg-red-950/40 p-3 rounded border border-red-900">
+                <div className="bg-red-950/40 p-3 rounded border border-red-900 shrink-0">
                   <Heart size={28} className="text-red-500 fill-red-500" />
                 </div>
                 <div>
@@ -135,16 +135,16 @@ const ShopTab = () => {
               </div>
               <button
                 onClick={() => handleBuyItem('heart')}
-                className="btn-heritage py-1.5 px-4 text-xs flex items-center gap-1"
+                className="btn-heritage py-2 px-4 text-xs flex items-center justify-center gap-1 w-full sm:w-auto cursor-pointer"
               >
                 <Coins size={12} /> 10 Coins
               </button>
             </div>
 
             {/* Hint */}
-            <div className="heritage-card p-4 rounded border flex justify-between items-center">
+            <div className="heritage-card p-4 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-3">
-                <div className="bg-amber-950/40 p-3 rounded border border-amber-900">
+                <div className="bg-amber-950/40 p-3 rounded border border-amber-900 shrink-0">
                   <HelpCircle size={28} className="text-amber-500" />
                 </div>
                 <div>
@@ -154,16 +154,16 @@ const ShopTab = () => {
               </div>
               <button
                 onClick={() => handleBuyItem('hint')}
-                className="btn-heritage py-1.5 px-4 text-xs flex items-center gap-1"
+                className="btn-heritage py-2 px-4 text-xs flex items-center justify-center gap-1 w-full sm:w-auto cursor-pointer"
               >
                 <Coins size={12} /> 15 Coins
               </button>
             </div>
 
             {/* Shield */}
-            <div className="heritage-card p-4 rounded border flex justify-between items-center">
+            <div className="heritage-card p-4 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-3">
-                <div className="bg-cyan-950/40 p-3 rounded border border-cyan-900">
+                <div className="bg-cyan-950/40 p-3 rounded border border-cyan-900 shrink-0">
                   <Shield size={28} className="text-cyan-400" />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ const ShopTab = () => {
               </div>
               <button
                 onClick={() => handleBuyItem('shield')}
-                className="btn-heritage py-1.5 px-4 text-xs flex items-center gap-1"
+                className="btn-heritage py-2 px-4 text-xs flex items-center justify-center gap-1 w-full sm:w-auto cursor-pointer"
               >
                 <Coins size={12} /> 25 Coins
               </button>
@@ -188,9 +188,9 @@ const ShopTab = () => {
           <div className="flex flex-col gap-4">
             
             {/* Default skin check */}
-            <div className="heritage-card p-4 rounded border flex justify-between items-center">
+            <div className="heritage-card p-4 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-orange-500 border-2 border-orange-700 flex items-center justify-center font-bold text-white shadow">
+                <div className="w-12 h-12 rounded-full bg-orange-500 border-2 border-orange-700 flex items-center justify-center font-bold text-white shadow shrink-0">
                   ॐ
                 </div>
                 <div>
@@ -199,11 +199,11 @@ const ShopTab = () => {
                 </div>
               </div>
               {activeSkin === 'default' ? (
-                <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1"><Check size={14} /> Active</span>
+                <span className="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1 w-full sm:w-auto py-1.5"><Check size={14} /> Active</span>
               ) : (
                 <button
                   onClick={() => handleEquipSkin('default')}
-                  className="btn-heritage-outline py-1 px-3 text-xs"
+                  className="btn-heritage-outline py-2 px-3 text-xs w-full sm:w-auto cursor-pointer"
                 >
                   Equip
                 </button>
@@ -223,9 +223,9 @@ const ShopTab = () => {
               if (skinId === 'gold_sutradhar') { bgClass = 'bg-yellow-500 border-yellow-700'; symbol = '✵'; }
 
               return (
-                <div key={skinId} className="heritage-card p-4 rounded border flex justify-between items-center">
+                <div key={skinId} className="heritage-card p-4 rounded border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold text-white shadow ${bgClass}`}>
+                    <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold text-white shadow shrink-0 ${bgClass}`}>
                       {symbol}
                     </div>
                     <div>
@@ -235,18 +235,18 @@ const ShopTab = () => {
                   </div>
 
                   {isActive ? (
-                    <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1"><Check size={14} /> Active</span>
+                    <span className="text-xs text-emerald-400 font-semibold flex items-center justify-center gap-1 w-full sm:w-auto py-1.5"><Check size={14} /> Active</span>
                   ) : owned ? (
                     <button
                       onClick={() => handleEquipSkin(skinId)}
-                      className="btn-heritage-outline py-1 px-3 text-xs"
+                      className="btn-heritage-outline py-2 px-3 text-xs w-full sm:w-auto cursor-pointer"
                     >
                       Equip
                     </button>
                   ) : (
                     <button
                       onClick={() => handleBuySkin(skinId)}
-                      className="btn-heritage py-1.5 px-4 text-xs flex items-center gap-1.5"
+                      className="btn-heritage py-2 px-4 text-xs flex items-center justify-center gap-1.5 w-full sm:w-auto cursor-pointer"
                     >
                       <Gem size={12} /> {skin.cost} Dia
                     </button>
