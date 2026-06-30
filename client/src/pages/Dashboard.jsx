@@ -1,6 +1,6 @@
-import React, { useState, useContext, lazy, Suspense } from 'react';
+import { useState, useContext, lazy, Suspense } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import SutradharCharacter from '../components/SutradharCharacter';
+import SutradharGuide from '../components/SutradharGuide';
 import { Coins, Gem, LogOut, Home, ShoppingBag, FolderOpen, BarChart3, User2 } from 'lucide-react';
 
 const SutradharMaze = lazy(() => import('../components/SutradharMaze'));
@@ -37,57 +37,73 @@ const Dashboard = () => {
 
   const renderHomeTab = () => {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center max-w-5xl mx-auto py-4">
-        {/* Left Column: Character preview */}
-        <div className="lg:col-span-2 flex flex-col items-center">
-          <SutradharCharacter />
+      <div className="max-w-5xl mx-auto py-4 flex flex-col gap-8">
+        {/* Hero Section */}
+        <div className="text-center bg-royal-blue-dark/40 border border-gold/15 p-6 sm:p-8 rounded-xl shadow-2xl relative overflow-hidden backdrop-blur-sm">
+          {/* Decorative Background Elements */}
+          <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-gold/5 blur-2xl"></div>
+          <div className="absolute -bottom-10 -right-10 w-40 h-40 rounded-full bg-maroon-light/5 blur-2xl"></div>
+          
+          <span className="text-[10px] sm:text-xs font-display text-gold tracking-widest uppercase border border-gold/30 px-3 py-1 rounded-full bg-gold/5 inline-block mb-3 animate-pulse">
+            ✦ Realm of Anvesha ✦
+          </span>
+          <h2 className="text-2xl sm:text-4xl font-display text-gold font-bold mb-3 tracking-wide gold-text-glow">
+            Decipher the Forgotten Saga
+          </h2>
+          <p className="text-xs sm:text-sm text-parchment-dark max-w-2xl mx-auto leading-relaxed">
+            India's cultural memories are slipping away into the void. As a Sutradhar, you must venture into ancient stepwells, mandalas, and university corridors to gather fragments of heritage and restore the eternal thread of knowledge.
+          </p>
         </div>
 
-        {/* Right Column: Game Mode Options */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
-          
-          {/* Intro Text */}
-          <div className="text-center lg:text-left">
-            <h2 className="text-3xl text-gold font-display mb-2">Decipher the Forgotten Saga</h2>
-            <p className="text-sm text-parchment-dark leading-relaxed">
-              India's cultural memories are slipping away into the void. As a Sutradhar, you must venture into ancient stepwells, mandalas, and university corridors to gather fragments of heritage and restore the eternal thread.
-            </p>
-          </div>
-
-          {/* Mode 1 Card */}
-          <div className="heritage-card p-5 rounded-lg border border-royal-blue-light hover:border-gold transition-all duration-300 group">
-            <h3 className="text-xl text-gold font-display mb-1.5 flex justify-between items-center">
-              <span>Sutradhar's Maze</span>
-              <span className="text-[10px] bg-gold/15 text-gold border border-gold/30 px-1.5 rounded uppercase tracking-wider">Solo Mode</span>
-            </h3>
-            <p className="text-xs text-parchment-dark mb-4 leading-relaxed">
-              Dodge the <strong className="text-pink-500">Vismarana</strong> spirits of forgetfulness in Stepwells, Forts, and Temple Mandalas. Collect memory fragments and solve ancient riddles for coins and speed boosts!
-            </p>
+        {/* Game Modes Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Mode 1 Card: Sutradhar's Maze */}
+          <div className="heritage-card p-6 rounded-lg border border-royal-blue-light hover:border-gold transition-all duration-300 flex flex-col justify-between group shadow-xl">
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[10px] bg-gold/15 text-gold border border-gold/30 px-2 py-0.5 rounded uppercase tracking-wider font-semibold">
+                  Solo Mode
+                </span>
+                <span className="text-xs text-gold/60 font-display">Realm Restorer</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl text-gold font-display font-bold mb-2 group-hover:gold-text-glow transition-all">
+                Sutradhar's Maze
+              </h3>
+              <p className="text-xs sm:text-sm text-parchment-dark mb-6 leading-relaxed">
+                Dodge the <strong className="text-pink-500 font-semibold">Vismarana</strong> spirits of forgetfulness in Stepwells, Forts, and Temple Mandalas. Collect memory fragments and solve ancient riddles for coins and speed boosts!
+              </p>
+            </div>
             <button
               onClick={() => setActiveTab('MAZE')}
-              className="btn-heritage px-6 py-2 text-xs w-full sm:w-auto"
+              className="btn-heritage px-6 py-2.5 text-xs w-full sm:w-auto font-display font-semibold transition-transform active:scale-95 cursor-pointer"
             >
               Play Solo Maze
             </button>
           </div>
 
-          {/* Mode 2 Card */}
-          <div className="heritage-card p-5 rounded-lg border border-royal-blue-light hover:border-gold transition-all duration-300 group">
-            <h3 className="text-xl text-gold font-display mb-1.5 flex justify-between items-center">
-              <span>Chor Sipahi</span>
-              <span className="text-[10px] bg-cyan-400/15 text-cyan-400 border border-cyan-400/30 px-1.5 rounded uppercase tracking-wider">Multiplayer</span>
-            </h3>
-            <p className="text-xs text-parchment-dark mb-4 leading-relaxed">
-              Step into ancient Nalanda University. Coordinate with 4-6 players. One player is the <strong className="text-red-500">Chor (Thief)</strong>. Decipher clues and vote out the suspect before time runs out!
-            </p>
+          {/* Mode 2 Card: Chor Sipahi */}
+          <div className="heritage-card p-6 rounded-lg border border-royal-blue-light hover:border-gold transition-all duration-300 flex flex-col justify-between group shadow-xl">
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-[10px] bg-cyan-400/15 text-cyan-400 border border-cyan-400/30 px-2 py-0.5 rounded uppercase tracking-wider font-semibold">
+                  Multiplayer
+                </span>
+                <span className="text-xs text-cyan-400/60 font-display">Co-op Deduction</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl text-gold font-display font-bold mb-2 group-hover:gold-text-glow transition-all">
+                Chor Sipahi
+              </h3>
+              <p className="text-xs sm:text-sm text-parchment-dark mb-6 leading-relaxed">
+                Step into ancient Nalanda University. Coordinate with 4-6 players. One player is the <strong className="text-red-500 font-semibold">Chor (Thief)</strong>. Decipher clues and vote out the suspect before time runs out!
+              </p>
+            </div>
             <button
               onClick={() => setActiveTab('MULTIPLAYER')}
-              className="btn-heritage px-6 py-2 text-xs w-full sm:w-auto"
+              className="btn-heritage px-6 py-2.5 text-xs w-full sm:w-auto font-display font-semibold transition-transform active:scale-95 cursor-pointer"
             >
               Enter Multiplayer Lobby
             </button>
           </div>
-
         </div>
       </div>
     );
@@ -248,6 +264,11 @@ const Dashboard = () => {
             <span>Profile</span>
           </button>
         </footer>
+      )}
+
+      {/* 4. Floating Sutradhar Guide */}
+      {activeTab !== 'MAZE' && activeTab !== 'MULTIPLAYER' && (
+        <SutradharGuide activeTab={activeTab} />
       )}
     </div>
   );
