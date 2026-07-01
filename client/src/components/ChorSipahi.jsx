@@ -12,6 +12,7 @@ const ChorSipahi = ({ onBackToDashboard }) => {
   const [room, setRoom] = useState(null);
   const [playerRole, setPlayerRole] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   // Round / Question state
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -43,11 +44,13 @@ const ChorSipahi = ({ onBackToDashboard }) => {
     socket.on('roomCreated', (roomData) => {
       setRoom(roomData);
       setErrorMsg('');
+      setShowJoinModal(false);
     });
 
     socket.on('roomUpdated', (roomData) => {
       setRoom(roomData);
       setErrorMsg('');
+      setShowJoinModal(false);
     });
 
     socket.on('roleAssigned', ({ role }) => {
@@ -242,24 +245,55 @@ const ChorSipahi = ({ onBackToDashboard }) => {
               <span className="px-3">OR JOIN ROOM</span>
               <div className="flex-1 h-px bg-royal-blue-light"></div>
             </div>
-            <div className="flex gap-2">
+            <button
+              onClick={() => setShowJoinModal(true)}
+              className="btn-heritage-outline py-3 w-full"
+            >
+              Join Existing Room
+            </button>
+          </div>
+
+          <button onClick={onBackToDashboard} className="text-xs text-parchment-dark hover:text-gold transition-all">
+            Back to Dashboard
+          </button>
+        </div>
+      )}
+
+      {/* Join Room Modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-royal-blue-dark border-2 border-gold p-6 rounded-lg w-full max-w-sm text-center relative shadow-2xl animate-fade-in">
+            <button 
+              onClick={() => {
+                setShowJoinModal(false);
+                setInputCode('');
+              }}
+              className="absolute top-3 right-3 text-parchment-dark hover:text-gold transition-all cursor-pointer border border-transparent hover:border-gold/20 hover:bg-gold/5 p-1 rounded"
+            >
+              <X size={16} />
+            </button>
+            
+            <h3 className="text-xl text-gold font-display mb-2">Join Existing Room</h3>
+            <p className="text-xs text-parchment-dark mb-4">Enter the 6-character room code to join the lobby.</p>
+            
+            <div className="flex flex-col gap-4">
               <input
                 type="text"
                 maxLength={6}
                 value={inputCode}
                 onChange={(e) => setInputCode(e.target.value.toUpperCase())}
                 placeholder="ROOM CODE"
-                className="flex-1 bg-royal-blue-dark border border-royal-blue-light text-center text-gold font-bold font-display uppercase tracking-widest rounded px-4 py-2.5 outline-none focus:border-gold"
+                className="bg-maroon-dark/50 border border-royal-blue-light text-center text-gold font-bold font-display uppercase tracking-widest rounded px-4 py-2.5 outline-none focus:border-gold text-lg"
               />
-              <button onClick={handleJoinRoom} className="btn-heritage-outline px-6 py-2">
-                Join
+              <button 
+                onClick={handleJoinRoom}
+                disabled={inputCode.length < 6}
+                className="btn-heritage py-3 font-semibold text-xs tracking-wider disabled:opacity-50"
+              >
+                Join Room
               </button>
             </div>
           </div>
-
-          <button onClick={onBackToDashboard} className="text-xs text-parchment-dark hover:text-gold transition-all">
-            Back to Dashboard
-          </button>
         </div>
       )}
 
