@@ -103,6 +103,12 @@ const ChorSipahi = ({ onBackToDashboard }) => {
       refreshUser(); // Refresh user currency/stats in context
     });
 
+    socket.on('kickedFromRoom', () => {
+      setErrorMsg('You have been kicked from the room.');
+      setRoom(null);
+      setPlayerRole(null);
+    });
+
     socket.on('errorMsg', (msg) => {
       setErrorMsg(msg);
       // Clear error after 4 seconds
@@ -120,6 +126,7 @@ const ChorSipahi = ({ onBackToDashboard }) => {
       socket.off('votingStarted');
       socket.off('messageReceived');
       socket.off('gameEnded');
+      socket.off('kickedFromRoom');
       socket.off('errorMsg');
     };
   }, [socket]);
@@ -151,6 +158,18 @@ const ChorSipahi = ({ onBackToDashboard }) => {
     socket.emit('startGame', { roomCode: room.roomCode });
   };
 
+  // Add Bot (Host only)
+  const handleAddBot = () => {
+    if (!socket || !room) return;
+    socket.emit('addBot', { roomCode: room.roomCode });
+  };
+
+  // Kick Player/Bot (Host only)
+  const handleKickPlayer = (playerId) => {
+    if (!socket || !room) return;
+    socket.emit('kickPlayer', { roomCode: room.roomCode, playerId });
+  };
+
   // Submit Answer
   const handleSubmitAnswer = (answerOption) => {
     if (!socket || !room || hasAnswered) return;
@@ -166,28 +185,18 @@ const ChorSipahi = ({ onBackToDashboard }) => {
       const res = await axios.post(`${API_URL}/shop/buy-item`, { itemType: 'hint', quantity: 1 });
       if (res.data.success) {
         refreshUser();
-        // Fetch question answer to eliminate one incorrect option
-        // Find options that are NOT the correct answer and not already disabled
-        const incorrectOptions = currentQuestion.options.filter(
-          opt => opt.toLowerCase() !== correctAnswer.toLowerCase() // wait, correctAnswer isn't revealed yet, but we can call a helper, or ask the server to filter.
-          // Wait, the client doesn't know the correctAnswer yet!
-          // We can call server API to get the correct answer for this question, or let's use a server endpoint /api/questions/check-answer or just use a mock filtering.
-          // Wait! To keep it simple, we can filter using a quick API check, or we can look up the question from the DB!
-          // Let's create an API endpoint POST /api/questions/hint that takes question text and options and returns the correct answer or a bad options index.
-          // Or let's make a post request to get the hint.
-        );
-        
-        // Let's do a post request to `/api/questions/hint` with question string to check correct answer
-        const checkRes = await axios.post(`${API_URL}/questions/random`, {}); // wait, we don't have a direct endpoint, but we can verify it.
-        // Let's write a simple check: we'll call a quick check endpoint we can add to `questionRoutes.js`!
-        // For now, let's post to `/api/questions/hint` which we will implement! Let's request it.
+        // Fetch correct answer from server to eliminate one incorrect option
         const hintRes = await axios.post(`${API_URL}/questions/hint`, { questionText: currentQuestion.question });
         if (hintRes.data.success) {
           const correctAns = hintRes.data.correctAnswer;
-          const badOpts = currentQuestion.options.filter(o => o !== correctAns);
-          // Disable one random incorrect option
-          const randomBad = badOpts[Math.floor(Math.random() * badOpts.length)];
-          setDisabledOptions(prev => [...prev, randomBad]);
+          const badOpts = currentQuestion.options.filter(
+            o => o.toLowerCase() !== correctAns.toLowerCase() && !disabledOptions.includes(o)
+          );
+          if (badOpts.length > 0) {
+            // Disable one random incorrect option
+            const randomBad = badOpts[Math.floor(Math.random() * badOpts.length)];
+            setDisabledOptions(prev => [...prev, randomBad]);
+          }
         }
       }
     } catch (err) {
@@ -269,9 +278,19 @@ const ChorSipahi = ({ onBackToDashboard }) => {
           </div>
 
           <div className="mb-6">
-            <h4 className="text-sm font-display text-gold mb-2 flex items-center gap-1.5">
-              <Users size={16} /> Players ({room.players.length}/6)
-            </h4>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="text-sm font-display text-gold flex items-center gap-1.5">
+                <Users size={16} /> Players ({room.players.length}/6)
+              </h4>
+              {room.hostId === socket.id && room.players.length < 6 && (
+                <button
+                  onClick={handleAddBot}
+                  className="px-2.5 py-1 bg-royal-blue border border-gold/30 hover:border-gold text-[10px] text-gold rounded font-display transition-all cursor-pointer"
+                >
+                  + Add Bot
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {room.players.map((player) => {
                 const isHost = player.id === room.hostId;
@@ -285,8 +304,19 @@ const ChorSipahi = ({ onBackToDashboard }) => {
                         : 'bg-royal-blue-dark border-royal-blue-light text-parchment'
                     }`}
                   >
-                    <span>{player.name} {isYou && '(You)'}</span>
-                    {isHost && <span className="text-[10px] bg-gold/20 text-gold border border-gold/40 px-1 rounded">Host</span>}
+                    <div className="flex items-center gap-1.5">
+                      <span>{player.name} {isYou && '(You)'}</span>
+                      {isHost && <span className="text-[10px] bg-gold/20 text-gold border border-gold/40 px-1 rounded">Host</span>}
+                    </div>
+                    {room.hostId === socket.id && !isYou && (
+                      <button
+                        onClick={() => handleKickPlayer(player.id)}
+                        className="text-red-400 hover:text-red-500 font-semibold text-xs ml-2 cursor-pointer transition-all border border-red-500/20 hover:border-red-500/50 bg-red-950/20 px-1.5 py-0.5 rounded flex items-center gap-0.5"
+                        title="Kick player/bot"
+                      >
+                        <X size={10} /> Kick
+                      </button>
+                    )}
                   </div>
                 );
               })}

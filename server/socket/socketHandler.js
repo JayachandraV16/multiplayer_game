@@ -3,6 +3,41 @@ const User = require('../models/User');
 const Leaderboard = require('../models/Leaderboard');
 const Inventory = require('../models/Inventory');
 
+// Bot names for multiplayer simulation
+const BOT_NAMES = [
+  'Aryabhata', 'Chanakya', 'Gargi', 'Kalidasa', 'Mirabai',
+  'Birbal', 'Tenali Raman', 'Sushruta', 'Varahamihira', 'Bhaskara',
+  'Maitreyi', 'Charaka', 'Ramanujan', 'Kanada', 'Panini'
+];
+
+// Dialogue templates for bot discussion phase
+const BOT_CHAT_TEMPLATES = {
+  defend_wrong: [
+    "Sorry everyone, I got that question wrong. That category was tricky!",
+    "Ah, my heritage history is a bit rusty. I promise I'm a Sipahi!",
+    "That was a hard question. Don't suspect me just because I answered wrong!",
+    "Oops, picked the wrong option. Veena vs Sitar confusion."
+  ],
+  accuse_others: [
+    "I suspect {target} is the Chor. Look at their score!",
+    "Could {target} be the Chor? They got a question wrong and answered so late.",
+    "{target} is acting very suspicious...",
+    "My gut says it's {target}."
+  ],
+  divert_chor: [
+    "I think {target} is definitely the Chor. Let's vote them out!",
+    "Sipahis, trust me, {target} is the suspect.",
+    "{target} is playing a very quiet game. Must be the thief.",
+    "I'm a Sipahi. Let's focus on {target}!"
+  ],
+  general: [
+    "This is intense. Who is the Chor?",
+    "We need to find the artifact thief before it's too late!",
+    "Let's vote together to win this.",
+    "Make sure we don't vote out a guard by mistake."
+  ]
+};
+
 // Rooms storage in-memory
 const rooms = {};
 
@@ -14,6 +49,13 @@ const generateRoomCode = () => {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+};
+
+// Helper to strip circular references like 'timer' before emitting to clients
+const getCleanRoom = (room) => {
+  if (!room) return null;
+  const { timer, ...cleanRoom } = room;
+  return cleanRoom;
 };
 
 const socketHandler = (io) => {
@@ -51,7 +93,7 @@ const socketHandler = (io) => {
         };
 
         socket.join(code);
-        socket.emit('roomCreated', rooms[code]);
+        socket.emit('roomCreated', getCleanRoom(rooms[code]));
         console.log(`Room created: ${code} by user ${name}`);
       } catch (err) {
         console.error(err);
@@ -98,8 +140,74 @@ const socketHandler = (io) => {
       }
 
       socket.join(code);
-      io.to(code).emit('roomUpdated', room);
+      io.to(code).emit('roomUpdated', getCleanRoom(room));
       console.log(`User ${name} joined room: ${code}`);
+    });
+
+    // Add Bot
+    socket.on('addBot', ({ roomCode }) => {
+      const room = rooms[roomCode];
+      if (!room) return socket.emit('errorMsg', 'Room not found.');
+      if (room.hostId !== socket.id) return socket.emit('errorMsg', 'Only the host can add bots.');
+      if (room.players.length >= 6) {
+        return socket.emit('errorMsg', 'Room is full (max 6 players).');
+      }
+      if (room.gameState !== 'LOBBY') {
+        return socket.emit('errorMsg', 'Cannot add bots after game starts.');
+      }
+
+      // Select a bot name that isn't already used
+      const existingNames = room.players.map(p => p.name.replace(' (Bot)', ''));
+      const availableNames = BOT_NAMES.filter(name => !existingNames.includes(name));
+      if (availableNames.length === 0) {
+        return socket.emit('errorMsg', 'No more bots available.');
+      }
+      const botName = availableNames[Math.floor(Math.random() * availableNames.length)];
+
+      const botId = `bot_${Math.random().toString(36).substr(2, 9)}`;
+      room.players.push({
+        id: botId,
+        userId: null,
+        name: `${botName} (Bot)`,
+        role: null,
+        score: 0,
+        coinsEarned: 0,
+        answeredThisRound: false,
+        lastAnswerCorrect: false,
+        votedFor: null,
+        disconnected: false,
+        isBot: true
+      });
+
+      io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
+      console.log(`Bot ${botName} added to room: ${roomCode}`);
+    });
+
+    // Kick Player (or remove Bot)
+    socket.on('kickPlayer', ({ roomCode, playerId }) => {
+      const room = rooms[roomCode];
+      if (!room) return socket.emit('errorMsg', 'Room not found.');
+      if (room.hostId !== socket.id) return socket.emit('errorMsg', 'Only the host can kick players.');
+      if (room.gameState !== 'LOBBY') {
+        return socket.emit('errorMsg', 'Cannot kick players after game starts.');
+      }
+
+      const playerIndex = room.players.findIndex(p => p.id === playerId);
+      if (playerIndex === -1) return socket.emit('errorMsg', 'Player not found.');
+
+      const player = room.players[playerIndex];
+      if (player.id === socket.id) {
+        return socket.emit('errorMsg', 'You cannot kick yourself.');
+      }
+
+      room.players.splice(playerIndex, 1);
+      io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
+      
+      if (!player.isBot) {
+        io.to(player.id).emit('kickedFromRoom');
+      }
+
+      console.log(`Player/Bot ${player.name} kicked from room: ${roomCode}`);
     });
 
     // Start Game
@@ -168,7 +276,7 @@ const socketHandler = (io) => {
       if (allSubmitted) {
         endRound(roomCode);
       } else {
-        io.to(roomCode).emit('roomUpdated', room);
+        io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
       }
     });
 
@@ -190,7 +298,7 @@ const socketHandler = (io) => {
       if (allVoted) {
         endVoting(roomCode);
       } else {
-        io.to(roomCode).emit('roomUpdated', room);
+        io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
       }
     });
 
@@ -236,7 +344,7 @@ const socketHandler = (io) => {
               if (room.hostId === socket.id) {
                 room.hostId = room.players[0].id;
               }
-              io.to(code).emit('roomUpdated', room);
+              io.to(code).emit('roomUpdated', getCleanRoom(room));
             }
           } else {
             // In game: mark as disconnected
@@ -262,7 +370,7 @@ const socketHandler = (io) => {
                 if (allSubmitted) {
                   endRound(code);
                 } else {
-                  io.to(code).emit('roomUpdated', room);
+                  io.to(code).emit('roomUpdated', getCleanRoom(room));
                 }
               } else if (room.gameState === 'VOTING') {
                 const allVoted = room.players
@@ -271,7 +379,7 @@ const socketHandler = (io) => {
                 if (allVoted) {
                   endVoting(code);
                 } else {
-                  io.to(code).emit('roomUpdated', room);
+                  io.to(code).emit('roomUpdated', getCleanRoom(room));
                 }
               }
             }
@@ -304,6 +412,9 @@ const socketHandler = (io) => {
       timerVal: room.timerVal
     });
 
+    // Broadcast room update to ensure clients see reset answered/status states
+    io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
+
     clearInterval(room.timer);
     room.timer = setInterval(() => {
       room.timerVal -= 1;
@@ -314,6 +425,9 @@ const socketHandler = (io) => {
         endRound(roomCode);
       }
     }, 1000);
+
+    // Schedule bots' answer submissions
+    scheduleBotAnswers(roomCode);
   }
 
   // End round, show results
@@ -361,6 +475,9 @@ const socketHandler = (io) => {
       timerVal: room.timerVal
     });
 
+    // Sync room state to reset votes on the client
+    io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
+
     clearInterval(room.timer);
     room.timer = setInterval(() => {
       room.timerVal -= 1;
@@ -371,6 +488,10 @@ const socketHandler = (io) => {
         endVoting(roomCode);
       }
     }, 1000);
+
+    // Schedule bots' chat messages and votes
+    scheduleBotChat(roomCode);
+    scheduleBotVotes(roomCode);
   }
 
   // End voting phase and compute results
@@ -484,9 +605,202 @@ const socketHandler = (io) => {
           p.answeredThisRound = false;
           p.votedFor = null;
         });
-        io.to(roomCode).emit('roomUpdated', rooms[roomCode]);
+        io.to(roomCode).emit('roomUpdated', getCleanRoom(rooms[roomCode]));
       }
     }, 12000);
+  }
+
+  // Schedule bots to submit answers
+  function scheduleBotAnswers(roomCode) {
+    const room = rooms[roomCode];
+    if (!room || room.gameState !== 'PLAYING') return;
+
+    const bots = room.players.filter(p => p.isBot && !p.disconnected && !p.answeredThisRound);
+    if (bots.length === 0) return;
+
+    const currentQuestion = room.questions[room.currentRound - 1];
+    if (!currentQuestion) return;
+
+    bots.forEach(bot => {
+      // Pick a random delay between 3 and 12 seconds
+      const delay = Math.floor(Math.random() * 9000) + 3000;
+
+      setTimeout(() => {
+        // Double check room state
+        const currentRoom = rooms[roomCode];
+        if (!currentRoom || currentRoom.gameState !== 'PLAYING') return;
+        const currentBot = currentRoom.players.find(p => p.id === bot.id);
+        if (!currentBot || currentBot.answeredThisRound || currentBot.disconnected) return;
+
+        // Determine correctness: Chor 50%, Sipahi 75%
+        const rand = Math.random();
+        const isCorrect = currentBot.role === 'CHOR' ? rand < 0.50 : rand < 0.75;
+        
+        let chosenAnswer;
+        if (isCorrect) {
+          chosenAnswer = currentQuestion.answer;
+        } else {
+          // Choose an incorrect option
+          const incorrectOptions = currentQuestion.options.filter(
+            o => o.toLowerCase() !== currentQuestion.answer.toLowerCase()
+          );
+          chosenAnswer = incorrectOptions[Math.floor(Math.random() * incorrectOptions.length)];
+        }
+
+        currentBot.answeredThisRound = true;
+        currentBot.lastAnswerCorrect = isCorrect;
+        
+        if (isCorrect) {
+          currentBot.score += 1;
+          currentBot.coinsEarned += 20;
+        }
+
+        console.log(`Bot ${currentBot.name} submitted answer: ${chosenAnswer} (Correct: ${isCorrect})`);
+
+        // Check if all players have submitted
+        const allSubmitted = currentRoom.players
+          .filter(p => !p.disconnected)
+          .every(p => p.answeredThisRound);
+
+        if (allSubmitted) {
+          endRound(roomCode);
+        } else {
+          io.to(roomCode).emit('roomUpdated', getCleanRoom(currentRoom));
+        }
+      }, delay);
+    });
+  }
+
+  // Schedule bots to send chat messages in discussion phase
+  function scheduleBotChat(roomCode) {
+    const room = rooms[roomCode];
+    if (!room || room.gameState !== 'VOTING') return;
+
+    const bots = room.players.filter(p => p.isBot && !p.disconnected);
+    if (bots.length === 0) return;
+
+    bots.forEach(bot => {
+      // Determine if bot sends a message (e.g. 70% chance of sending a message)
+      if (Math.random() > 0.7) return;
+
+      // Pick a random delay between 5 and 30 seconds
+      const delay = Math.floor(Math.random() * 25000) + 5000;
+
+      setTimeout(() => {
+        const currentRoom = rooms[roomCode];
+        if (!currentRoom || currentRoom.gameState !== 'VOTING') return;
+        const currentBot = currentRoom.players.find(p => p.id === bot.id);
+        if (!currentBot || currentBot.disconnected) return;
+
+        // Choose template based on role and score
+        let category = 'general';
+        if (currentBot.role === 'CHOR') {
+          category = 'divert_chor';
+        } else {
+          // Sipahi
+          if (currentBot.score < 3) {
+            // Got some answers wrong
+            category = Math.random() < 0.5 ? 'defend_wrong' : 'accuse_others';
+          } else {
+            category = Math.random() < 0.7 ? 'accuse_others' : 'general';
+          }
+        }
+
+        const templates = BOT_CHAT_TEMPLATES[category];
+        let messageText = templates[Math.floor(Math.random() * templates.length)];
+
+        // If template requires a target, find a suitable player
+        if (messageText.includes('{target}')) {
+          // Find candidates (excluding the bot itself)
+          const candidates = currentRoom.players.filter(p => p.id !== currentBot.id && !p.disconnected);
+          if (candidates.length > 0) {
+            let targetPlayer;
+            if (category === 'accuse_others') {
+              // Sipahi bot targets the player with the lowest score
+              const sorted = [...candidates].sort((a, b) => a.score - b.score);
+              targetPlayer = sorted[0];
+            } else {
+              targetPlayer = candidates[Math.floor(Math.random() * candidates.length)];
+            }
+            messageText = messageText.replace('{target}', targetPlayer.name);
+          } else {
+            // Fallback to general template
+            const genTemplates = BOT_CHAT_TEMPLATES.general;
+            messageText = genTemplates[Math.floor(Math.random() * genTemplates.length)];
+          }
+        }
+
+        const chatMsg = {
+          sender: currentBot.name,
+          text: messageText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+
+        currentRoom.chatMessages.push(chatMsg);
+        io.to(roomCode).emit('messageReceived', chatMsg);
+      }, delay);
+    });
+  }
+
+  // Schedule bots to cast votes
+  function scheduleBotVotes(roomCode) {
+    const room = rooms[roomCode];
+    if (!room || room.gameState !== 'VOTING') return;
+
+    const bots = room.players.filter(p => p.isBot && !p.disconnected && !p.votedFor);
+    if (bots.length === 0) return;
+
+    bots.forEach(bot => {
+      // Pick a random delay between 12 and 35 seconds
+      const delay = Math.floor(Math.random() * 23000) + 12000;
+
+      setTimeout(() => {
+        const currentRoom = rooms[roomCode];
+        if (!currentRoom || currentRoom.gameState !== 'VOTING') return;
+        const currentBot = currentRoom.players.find(p => p.id === bot.id);
+        if (!currentBot || currentBot.votedFor || currentBot.disconnected) return;
+
+        // Choose who to vote for
+        const otherPlayers = currentRoom.players.filter(p => p.id !== currentBot.id && !p.disconnected);
+        if (otherPlayers.length === 0) return;
+
+        let targetId = 'skip';
+
+        if (currentBot.role === 'CHOR') {
+          // Chor bot votes for a random Sipahi player (not themselves)
+          const sipahis = otherPlayers.filter(p => p.role !== 'CHOR');
+          const target = sipahis.length > 0 ? sipahis[Math.floor(Math.random() * sipahis.length)] : otherPlayers[Math.floor(Math.random() * otherPlayers.length)];
+          targetId = target.id;
+        } else {
+          // Sipahi Bot
+          // 70% chance to vote for the player with the lowest score, 15% chance to vote for a random other player, 15% chance to skip
+          const rand = Math.random();
+          if (rand < 0.70) {
+            // Sort by score ascending (lowest score is most suspicious)
+            const sorted = [...otherPlayers].sort((a, b) => a.score - b.score);
+            targetId = sorted[0].id;
+          } else if (rand < 0.85) {
+            targetId = otherPlayers[Math.floor(Math.random() * otherPlayers.length)].id;
+          } else {
+            targetId = 'skip';
+          }
+        }
+
+        currentBot.votedFor = targetId;
+        console.log(`Bot ${currentBot.name} voted for ${targetId}`);
+
+        // Check if all players have voted
+        const allVoted = currentRoom.players
+          .filter(p => !p.disconnected)
+          .every(p => p.votedFor !== null);
+
+        if (allVoted) {
+          endVoting(roomCode);
+        } else {
+          io.to(roomCode).emit('roomUpdated', getCleanRoom(currentRoom));
+        }
+      }, delay);
+    });
   }
 };
 
