@@ -4,7 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Send, Users, ShieldAlert, Gem, Coins, LogOut, X, MessageSquare, Clock, Sparkles } from 'lucide-react';
 
 const TILE_SIZE = 32; // px per grid cell
-const MOVE_COOLDOWN_MS = 130;
+const MOVE_INTERVAL_MS = 100; // how often a held movement key advances one tile — lower = faster
 
 const KEY_TO_DELTA = {
   ArrowUp: [-1, 0], w: [-1, 0], W: [-1, 0],
@@ -37,9 +37,12 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
   const [finalResults, setFinalResults] = useState(null);
 
   const chatEndRef = useRef(null);
-  const lastMoveRef = useRef(0);
-  const roomRef = useRef(null); // avoid stale closures inside the keydown handler
+  const roomRef = useRef(null); // avoid stale closures inside the movement loop
   roomRef.current = room;
+  const livePositionsRef = useRef({});
+  livePositionsRef.current = livePositions;
+  const heldKeysRef = useRef(new Set());
+  const lastDirKeyRef = useRef(null);
 
   useEffect(() => {
     if (!socket) return;
@@ -155,33 +158,62 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
     }
   }, [socket]);
 
+  // Track which movement keys are currently held down, plus the most recently
+  // pressed one (so holding two directions at once doesn't produce diagonal
+  // ambiguity — the freshest key wins).
   useEffect(() => {
     const handleKeyDown = (e) => {
-      const currentRoom = roomRef.current;
-      if (!currentRoom || currentRoom.gameState !== 'PLAYING' || !socket) return;
-      const delta = KEY_TO_DELTA[e.key];
-      if (!delta) return;
+      if (!KEY_TO_DELTA[e.key]) return;
+      heldKeysRef.current.add(e.key);
+      lastDirKeyRef.current = e.key;
+    };
+    const handleKeyUp = (e) => {
+      if (!KEY_TO_DELTA[e.key]) return;
+      heldKeysRef.current.delete(e.key);
+      if (lastDirKeyRef.current === e.key) {
+        const remaining = [...heldKeysRef.current];
+        lastDirKeyRef.current = remaining.length > 0 ? remaining[remaining.length - 1] : null;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
-      const now = Date.now();
-      if (now - lastMoveRef.current < MOVE_COOLDOWN_MS) return;
+  // Continuous movement loop: every MOVE_INTERVAL_MS, if a direction key is
+  // held, advance one tile. This is what makes movement feel smooth and fast
+  // instead of relying on the browser's (inconsistent) key-repeat timing.
+  useEffect(() => {
+    if (!socket) return;
+
+    const intervalId = setInterval(() => {
+      const currentRoom = roomRef.current;
+      if (!currentRoom || currentRoom.gameState !== 'PLAYING') return;
+
+      const activeKey = lastDirKeyRef.current;
+      if (!activeKey) return;
+      const delta = KEY_TO_DELTA[activeKey];
+      if (!delta) return;
 
       const me = currentRoom.players.find(p => p.id === socket.id);
       if (!me) return;
-      const pos = livePositions[socket.id] || { row: me.row, col: me.col };
+
+      const pos = livePositionsRef.current[socket.id] || { row: me.row, col: me.col };
       const newRow = pos.row + delta[0];
       const newCol = pos.col + delta[1];
 
       if (!isWalkable(newRow, newCol)) return;
 
-      lastMoveRef.current = now;
       setLivePositions(prev => ({ ...prev, [socket.id]: { row: newRow, col: newCol } }));
       socket.emit('playerMoved', { roomCode: currentRoom.roomCode, row: newRow, col: newCol });
       attemptCollectAt(newRow, newCol);
-    };
+    }, MOVE_INTERVAL_MS);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [socket, livePositions, isWalkable, attemptCollectAt]);
+    return () => clearInterval(intervalId);
+  }, [socket, isWalkable, attemptCollectAt]);
 
   // ---------------------------------------------------------------------
   // Actions
@@ -344,11 +376,16 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
           </div>
 
           <div className="bg-maroon-dark/50 border border-maroon-light p-3 rounded text-xs text-parchment-dark mb-6 leading-relaxed">
-            <strong className="text-gold block mb-1">How to Play:</strong>
-            - Explore the ruins of Nalanda. One player is secretly the <strong className="text-red-500">Chor (Thief)</strong>, the rest are <strong className="text-cyan-400">Sipahis (Guards)</strong>.
-            - Move with WASD or Arrow Keys. Walk onto coins and artifacts to collect them.
-            - Sipahis secure artifacts safely. The Chor secretly steals them, leaving a clue behind each time.
-            - When time runs out, discuss and vote out who you think the Chor is.
+            <strong className="text-gold block mb-1">How to Play — Lost Artifact Hunt:</strong>
+            <ul className="list-disc list-inside space-y-1">
+              <li><strong className="text-parchment">Move:</strong> WASD or Arrow Keys. Hold a key down to keep moving.</li>
+              <li><strong className="text-parchment">Roles:</strong> One player is secretly the <strong className="text-red-500">Chor (Thief)</strong>; everyone else is a <strong className="text-cyan-400">Sipahi (Guard)</strong>. Your role is shown only to you.</li>
+              <li><strong className="text-parchment">Coins</strong> (gold coin icon): anyone can walk over these to collect them freely.</li>
+              <li><strong className="text-parchment">Artifacts</strong> (cyan sparkle icon): walking onto one auto-collects it — Sipahis <strong className="text-cyan-300">secure</strong> it safely, but the Chor secretly <strong className="text-red-400">steals</strong> it instead.</li>
+              <li><strong className="text-parchment">Clues</strong> (red shield icon): appear where the Chor stole an artifact. Sipahis can walk over them to pick up a lead.</li>
+              <li><strong className="text-parchment">Winning:</strong> Sipahis win once every artifact is captured without the Chor reaching their steal quota, or by voting out the Chor. The Chor wins by reaching the steal quota, or by not being voted out.</li>
+              <li>If time runs out before all artifacts are resolved, everyone discusses and votes on who they think the Chor is.</li>
+            </ul>
           </div>
 
           <div className="flex gap-4">
@@ -473,6 +510,17 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
                 })}
               </div>
             </div>
+
+            <div>
+              <h4 className="text-sm font-display text-gold mb-2 border-b border-royal-blue-light pb-2">How to Play</h4>
+              <ul className="text-[11px] text-parchment-dark leading-relaxed space-y-1.5">
+                <li><strong className="text-parchment">Move:</strong> WASD or Arrow Keys (hold to keep moving).</li>
+                <li className="flex items-center gap-1.5"><Coins size={12} className="text-gold shrink-0" /> Coin — walk over it to collect.</li>
+                <li className="flex items-center gap-1.5"><Sparkles size={12} className="text-cyan-300 shrink-0" /> Artifact — Sipahis secure it, Chor secretly steals it.</li>
+                <li className="flex items-center gap-1.5"><ShieldAlert size={12} className="text-red-400 shrink-0" /> Clue — left behind after a theft.</li>
+                <li>Sipahis win by capturing all artifacts without the Chor hitting quota, or by voting the Chor out.</li>
+              </ul>
+            </div>
           </div>
         </div>
       )}
@@ -575,7 +623,7 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
         <div className="heritage-card p-6 rounded-lg w-full max-w-xl border gold-border text-center">
           <h3 className="text-3xl text-gold font-display mb-1">Match Over</h3>
           <p className="text-xs text-parchment-dark mb-4">
-            {finalResults.reason === 'ALL_SECURED' && 'All artifacts were secured safely!'}
+            {finalResults.reason === 'ALL_CAPTURED' && 'All artifacts have been captured!'}
             {finalResults.reason === 'CHOR_QUOTA' && 'The Chor escaped with enough loot!'}
             {finalResults.reason === 'VOTE' && <>Voted Out: <strong className="text-parchment">{finalResults.votedOutName}</strong></>}
           </p>

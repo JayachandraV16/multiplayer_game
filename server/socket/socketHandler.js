@@ -385,7 +385,7 @@ const socketHandler = (io) => {
     });
 
     room.gameState = 'PLAYING';
-    room.timerVal = 90; // 90 seconds to explore
+    room.timerVal = 60; // 60 seconds to explore
 
     io.to(roomCode).emit('explorationStarted', {
       mapId: room.mapId,
@@ -441,13 +441,6 @@ const socketHandler = (io) => {
       if (player.role === 'SIPAHI') {
         artifact.collected = true;
         player.artifactsSecured += 1;
-
-        const totalResolved = room.artifacts.filter(a => a.collected || a.stolen).length;
-        const anyStolen = room.artifacts.some(a => a.stolen);
-        if (totalResolved === room.artifacts.length && !anyStolen) {
-          io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
-          return endExploration(roomCode, 'ALL_SECURED');
-        }
       } else {
         // CHOR steals it secretly, leaving a clue behind.
         artifact.stolen = true;
@@ -460,14 +453,23 @@ const socketHandler = (io) => {
           collected: false,
         };
         room.clues.push(clue);
-
-        if (player.artifactsStolen >= room.requiredStolenToWin) {
-          io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
-          return endExploration(roomCode, 'CHOR_QUOTA');
-        }
       }
 
       io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
+
+      // Instant win check #1: Chor reached their steal quota before being caught.
+      const stolenCount = room.artifacts.filter(a => a.stolen).length;
+      if (stolenCount >= room.requiredStolenToWin) {
+        return endExploration(roomCode, 'CHOR_QUOTA');
+      }
+
+      // Instant win check #2: every artifact has now been captured (secured or
+      // stolen), one way or the other. Nothing left to explore for, so the
+      // round ends right away instead of waiting for the timer.
+      const resolvedCount = room.artifacts.filter(a => a.collected || a.stolen).length;
+      if (resolvedCount === room.artifacts.length) {
+        return endExploration(roomCode, 'ALL_CAPTURED');
+      }
     }
   }
 
@@ -479,9 +481,12 @@ const socketHandler = (io) => {
     clearInterval(room.timer);
     clearInterval(room.botTimer);
 
-    if (reason === 'ALL_SECURED') {
-      // Nothing left to accuse anyone of: Sipahis win outright, skip the vote.
-      return finishGame(roomCode, { sipahiWin: true, votedOutPlayer: null, reason });
+    if (reason === 'ALL_CAPTURED') {
+      // Every artifact has been resolved. If the Chor never reached their
+      // steal quota, the Sipahis held the line — win outright, skip the vote.
+      const stolenCount = room.artifacts.filter(a => a.stolen).length;
+      const sipahiWin = stolenCount < room.requiredStolenToWin;
+      return finishGame(roomCode, { sipahiWin, votedOutPlayer: null, reason });
     }
 
     if (reason === 'CHOR_QUOTA') {
@@ -499,7 +504,7 @@ const socketHandler = (io) => {
     if (!room) return;
 
     room.gameState = 'VOTING';
-    room.timerVal = 45; // 45 seconds for discussion and voting
+    room.timerVal = 20; // 20 seconds for discussion + voting (combined, no separate phase)
     room.players.forEach(p => p.votedFor = null);
 
     io.to(roomCode).emit('votingStarted', { timerVal: room.timerVal });
@@ -691,7 +696,7 @@ const socketHandler = (io) => {
 
     bots.forEach(bot => {
       if (Math.random() > 0.7) return;
-      const delay = Math.floor(Math.random() * 25000) + 5000;
+      const delay = Math.floor(Math.random() * 6000) + 1500; // fits inside the 20s window
 
       setTimeout(() => {
         const currentRoom = roomsRef[roomCode];
@@ -754,7 +759,7 @@ const socketHandler = (io) => {
     if (bots.length === 0) return;
 
     bots.forEach(bot => {
-      const delay = Math.floor(Math.random() * 23000) + 12000;
+      const delay = Math.floor(Math.random() * 8000) + 4000; // fits inside the 20s window
 
       setTimeout(() => {
         const currentRoom = roomsRef[roomCode];
