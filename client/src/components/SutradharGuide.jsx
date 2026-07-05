@@ -64,17 +64,17 @@ const SutradharGuide = ({ activeTab }) => {
   const getGuideText = () => {
     switch (activeTab) {
       case 'HOME':
-        return "Greetings, seeker! I am the Sutradhar. I hold the threads connecting Bharat's past and future. India's cultural memories are fading. Choose a path: venture solo into the 'Sutradhar's Maze' or gather teammates for 'Chor Sipahi' at Nalanda.";
+        return "Welcome, adventurer! I am the Sutradhar, your guide to preserving India's heritage. Choose your path: play 'Sutradhar's Maze' solo to explore ancient ruins, or join 'Lost Artifact Hunt' with friends to solve a mystery!";
       case 'SHOP':
-        return "Welcome to the Royal Bazaar. Here, you can exchange the coins you recover for mystical boosters like Shields and Hearts, or spend Diamonds on legendary Raj-Nata avatars! Boosters will safeguard you in the stepwells.";
+        return "Welcome to the Bazaar! Spend the coins you gather in the game to buy extra Hearts and Shields for protection. You can also use your victory Diamonds to unlock legendary character skins!";
       case 'INVENTORY':
-        return "Behold your personal Treasury. Here lie the items and character skins you have acquired. Equip a skin to alter your spiritual form, or review your remaining shields and hearts.";
+        return "This is your inventory. Here you can see your active skins, shields, and hearts. Select and equip any unlocked character skin to change your player avatar!";
       case 'LEADERBOARD':
-        return "The Path of Glory! These are the names of the most diligent Sutradhars who have reclaimed the threads of memory. Let their dedication inspire your quest!";
+        return "Check out the top players who have saved the most memories! Can you beat their scores and rise to the top of the leaderboard?";
       case 'PROFILE':
-        return "This is your cosmic chronicle. It displays your status, accomplishments, and resources. Keep striving to restore the light of knowledge!";
+        return "This is your profile page. It shows your username, total score, wins, and the history of the coins and diamonds you've earned.";
       default:
-        return "Seek and you shall find. Let me guide your footsteps through the forgotten realms.";
+        return "I am here to guide your footsteps through the forgotten realms. Let's reclaim history together!";
     }
   };
 

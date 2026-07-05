@@ -183,6 +183,7 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
   const livePositionsRef = useRef(livePositions);
   livePositionsRef.current = livePositions;
 
+<<<<<<< HEAD
   // Shared movement step used by both the keyboard handler and the on-screen
   // D-pad (mobile). Keeping this in one place means touch and keyboard move
   // identically and respect the same cooldown.
@@ -207,15 +208,37 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
     attemptCollectAt(newRow, newCol);
   }, [socket, isWalkable, attemptCollectAt]);
 
+=======
+>>>>>>> dbf2e7f30d25ab213fe732fbd120e7d442604505
   useEffect(() => {
     const handleKeyDown = (e) => {
       const delta = KEY_TO_DELTA[e.key];
       if (!delta) return;
+<<<<<<< HEAD
       moveInDirection(delta);
+=======
+
+      const now = Date.now();
+      if (now - lastMoveRef.current < MOVE_COOLDOWN_MS) return;
+
+      const me = currentRoom.players.find(p => p.id === socket.id);
+      if (!me) return;
+      const pos = livePositionsRef.current[socket.id] || { row: me.row, col: me.col };
+      const newRow = pos.row + delta[0];
+      const newCol = pos.col + delta[1];
+
+      if (!isWalkable(newRow, newCol)) return;
+
+      lastMoveRef.current = now;
+      setLivePositions(prev => ({ ...prev, [socket.id]: { row: newRow, col: newCol } }));
+      socket.emit('playerMoved', { roomCode: currentRoom.roomCode, row: newRow, col: newCol });
+      attemptCollectAt(newRow, newCol);
+>>>>>>> dbf2e7f30d25ab213fe732fbd120e7d442604505
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+<<<<<<< HEAD
   }, [moveInDirection]);
 
   // ---------------------------------------------------------------------
@@ -239,6 +262,9 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
     // mid-press (e.g. player navigates away while still touching a button).
     return () => clearInterval(dpadIntervalRef.current);
   }, []);
+=======
+  }, [socket, isWalkable, attemptCollectAt]);
+>>>>>>> dbf2e7f30d25ab213fe732fbd120e7d442604505
 
   // ---------------------------------------------------------------------
   // Actions

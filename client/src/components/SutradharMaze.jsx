@@ -1530,11 +1530,10 @@ const SutradharMaze = ({ onBackToDashboard }) => {
       {!isPlaying && !isGameOver && !isGameWon && !questionModal && !questionLoading && (
         <div className="heritage-card p-8 rounded-lg max-w-lg w-full text-center border gold-border">
           <h2 className="text-3xl text-gold font-display mb-2">Sutradhar's Maze</h2>
-          <p className="text-sm text-parchment-dark mb-6 leading-relaxed">
-            Guide the <strong className="text-gold">Sutradhar</strong> (royal thread-holder) through ancient passages to recover
-            <strong className="text-amber-300"> memory fragments</strong>. Dodge the{' '}
-            <span className="text-pink-500 font-bold">Vismarana</span> spirits of forgetfulness.
-            Every two fragments unlocks a cultural wisdom question!
+          <p className="text-sm text-parchment-dark mb-6 leading-relaxed font-sans">
+            Help the <strong className="text-gold">Sutradhar</strong> (storyteller) walk through the maze to collect glowing <strong className="text-amber-300">memory fragments</strong>. 
+            Run away from the pink <span className="text-pink-500 font-bold">spirits of forgetfulness</span>—if they touch you, you will lose a heart! 
+            Every 2 fragments you collect will give you a history question to help you earn coins!
           </p>
 
           {/* Map Theme Selector / Starting Level */}
@@ -1596,10 +1595,8 @@ const SutradharMaze = ({ onBackToDashboard }) => {
           </div>
 
           {/* Win objective note */}
-          <p className="text-xs text-parchment-dark mb-5 bg-royal-blue-dark/40 border border-royal-blue-light/40 rounded p-2">
-            🎯 <strong className="text-gold">Objective:</strong> Collect all{' '}
-            <strong className="text-amber-300">memory fragments</strong> and the{' '}
-            <strong className="text-cyan-400">Ratna diamond</strong> to win!
+          <p className="text-xs text-parchment-dark mb-5 bg-royal-blue-dark/40 border border-royal-blue-light/40 rounded p-2 font-sans">
+            🎯 <strong className="text-gold">How to Win:</strong> Find all the yellow memory fragments and grab the blue diamond to escape and win the level!
           </p>
 
           <div className="flex gap-4">
@@ -1726,8 +1723,8 @@ const SutradharMaze = ({ onBackToDashboard }) => {
               </div>
             </div>
 
-            <p className="text-[10px] text-center text-parchment-dark mt-2 hidden md:block">
-              Controls: Arrow Keys or WASD to move the Sutradhar.
+            <p className="text-xs text-center text-parchment-dark mt-2 hidden md:block font-sans">
+              ⌨️ <strong>Controls:</strong> Use your keyboard's <strong>Arrow Keys</strong> or <strong>WASD</strong> to move the character.
             </p>
 
             {/* ── 3. Trivia Question Modal ─────────────────────────────────── */}

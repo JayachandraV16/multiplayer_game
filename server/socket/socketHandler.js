@@ -121,16 +121,18 @@ const socketHandler = (io) => {
         return socket.emit('errorMsg', 'Room not found.');
       }
 
-      if (room.gameState !== 'LOBBY') {
+      const existingPlayerIndex = room.players.findIndex(p => p.userId === userId);
+      const isReconnecting = existingPlayerIndex !== -1;
+
+      if (room.gameState !== 'LOBBY' && !isReconnecting) {
         return socket.emit('errorMsg', 'Game has already started in this room.');
       }
 
-      if (room.players.length >= 6) {
+      if (room.players.length >= 6 && !isReconnecting) {
         return socket.emit('errorMsg', 'Room is full (max 6 players).');
       }
 
-      const existingPlayerIndex = room.players.findIndex(p => p.userId === userId);
-      if (existingPlayerIndex !== -1) {
+      if (isReconnecting) {
         room.players[existingPlayerIndex].id = socket.id;
         room.players[existingPlayerIndex].disconnected = false;
       } else {
@@ -139,7 +141,23 @@ const socketHandler = (io) => {
 
       socket.join(code);
       io.to(code).emit('roomUpdated', getCleanRoom(room));
-      console.log(`User ${name} joined room: ${code}`);
+      console.log(`User ${name} joined room: ${code} (Reconnect: ${isReconnecting})`);
+
+      // If reconnecting during an active phase, send them the current state.
+      if (isReconnecting) {
+        if (room.gameState === 'PLAYING') {
+          const map = MAPS[room.mapId];
+          socket.emit('explorationStarted', {
+            mapId: room.mapId,
+            grid: map.grid,
+            timerVal: room.timerVal,
+          });
+        } else if (room.gameState === 'VOTING') {
+          socket.emit('votingStarted', { timerVal: room.timerVal });
+        } else if (room.gameState === 'RESULTS' && room.finalResults) {
+          socket.emit('gameEnded', room.finalResults);
+        }
+      }
     });
 
     // Add Bot
@@ -295,29 +313,30 @@ const socketHandler = (io) => {
 
           if (room.gameState === 'LOBBY') {
             room.players.splice(playerIndex, 1);
-            if (room.players.length === 0) {
+            const humanPlayers = room.players.filter(p => !p.isBot);
+            if (humanPlayers.length === 0) {
               clearInterval(room.timer);
               clearInterval(room.botTimer);
               delete rooms[code];
-              console.log(`Room ${code} deleted (empty)`);
+              console.log(`Room ${code} deleted (empty lobby)`);
             } else {
               if (room.hostId === socket.id) {
-                room.hostId = room.players[0].id;
+                room.hostId = humanPlayers[0].id;
               }
               io.to(code).emit('roomUpdated', getCleanRoom(room));
             }
           } else {
             player.disconnected = true;
 
-            const activePlayers = room.players.filter(p => !p.disconnected);
-            if (activePlayers.length === 0) {
+            const activeHumanPlayers = room.players.filter(p => !p.isBot && !p.disconnected);
+            if (activeHumanPlayers.length === 0) {
               clearInterval(room.timer);
               clearInterval(room.botTimer);
               delete rooms[code];
-              console.log(`Room ${code} deleted (empty during game)`);
+              console.log(`Room ${code} deleted (no active human players left)`);
             } else {
               if (room.hostId === socket.id) {
-                room.hostId = activePlayers[0].id;
+                room.hostId = activeHumanPlayers[0].id;
               }
 
               if (room.gameState === 'VOTING') {
@@ -385,7 +404,7 @@ const socketHandler = (io) => {
     });
 
     room.gameState = 'PLAYING';
-    room.timerVal = 60; // 60 seconds to explore
+    room.timerVal = 90; // 90 seconds to explore
 
     io.to(roomCode).emit('explorationStarted', {
       mapId: room.mapId,
@@ -476,8 +495,9 @@ const socketHandler = (io) => {
   // Exploration is over, either by timeout or an instant-win condition.
   function endExploration(roomCode, reason) {
     const room = rooms[roomCode];
-    if (!room) return;
+    if (!room || room.gameState !== 'PLAYING') return;
 
+    room.gameState = 'EXPLORATION_ENDED'; // transitional state
     clearInterval(room.timer);
     clearInterval(room.botTimer);
 
@@ -503,8 +523,9 @@ const socketHandler = (io) => {
     const room = rooms[roomCode];
     if (!room) return;
 
+    console.log(`[Voting Debug] startVotingPhase called for room ${roomCode}`);
     room.gameState = 'VOTING';
-    room.timerVal = 20; // 20 seconds for discussion + voting (combined, no separate phase)
+    room.timerVal = 45; // 45 seconds for discussion and voting
     room.players.forEach(p => p.votedFor = null);
 
     io.to(roomCode).emit('votingStarted', { timerVal: room.timerVal });
@@ -513,10 +534,12 @@ const socketHandler = (io) => {
     clearInterval(room.timer);
     room.timer = setInterval(() => {
       room.timerVal -= 1;
+      console.log(`[Voting Debug] Timer tick for room ${roomCode}: ${room.timerVal}s remaining`);
       io.to(roomCode).emit('timerUpdate', room.timerVal);
 
       if (room.timerVal <= 0) {
         clearInterval(room.timer);
+        console.log(`[Voting Debug] Timer expired for room ${roomCode}. Calling endVoting`);
         endVoting(roomCode);
       }
     }, 1000);
@@ -528,8 +551,10 @@ const socketHandler = (io) => {
   // End voting phase and compute results
   function endVoting(roomCode) {
     const room = rooms[roomCode];
-    if (!room) return;
+    if (!room || room.gameState !== 'VOTING') return;
 
+    console.log(`[Voting Debug] endVoting called for room ${roomCode}`);
+    room.gameState = 'VOTING_ENDED'; // transitional state
     clearInterval(room.timer);
 
     const voteCounts = {};
@@ -551,13 +576,14 @@ const socketHandler = (io) => {
     const votedOutPlayer = votedOutId ? room.players.find(p => p.id === votedOutId) : null;
     const sipahiWin = !!(votedOutPlayer && votedOutPlayer.role === 'CHOR');
 
+    console.log(`[Voting Debug] Vote computed for ${roomCode}: VotedOut: ${votedOutPlayer ? votedOutPlayer.name : 'None'}, SipahiWin: ${sipahiWin}`);
     finishGame(roomCode, { sipahiWin, votedOutPlayer, reason: 'VOTE' });
   }
 
   // Shared endgame: award currency, notify clients, reset room after a delay.
   async function finishGame(roomCode, { sipahiWin, votedOutPlayer, reason }) {
     const room = rooms[roomCode];
-    if (!room) return;
+    if (!room || room.gameState === 'RESULTS') return;
 
     room.gameState = 'RESULTS';
     const chorPlayer = room.players.find(p => p.role === 'CHOR');
@@ -616,13 +642,18 @@ const socketHandler = (io) => {
       });
     }
 
-    io.to(roomCode).emit('gameEnded', {
+    const gameEndedData = {
       sipahiWin,
       reason,
       votedOutName: votedOutPlayer ? votedOutPlayer.name : 'Nobody (Skip/Tie)',
       chorName: chorPlayer ? chorPlayer.name : 'Unknown',
       playersResults: updatedPlayers,
-    });
+    };
+    room.finalResults = gameEndedData;
+
+    console.log(`[Voting Debug] finishGame running for ${roomCode}. Emitting roomUpdated and gameEnded...`);
+    io.to(roomCode).emit('roomUpdated', getCleanRoom(room));
+    io.to(roomCode).emit('gameEnded', gameEndedData);
 
     setTimeout(() => {
       if (rooms[roomCode]) {
@@ -631,6 +662,7 @@ const socketHandler = (io) => {
         rooms[roomCode].coins = [];
         rooms[roomCode].clues = [];
         rooms[roomCode].chatMessages = [];
+        rooms[roomCode].finalResults = null;
         rooms[roomCode].players.forEach(p => {
           p.role = null;
           p.coinsCollected = 0;
@@ -696,7 +728,7 @@ const socketHandler = (io) => {
 
     bots.forEach(bot => {
       if (Math.random() > 0.7) return;
-      const delay = Math.floor(Math.random() * 6000) + 1500; // fits inside the 20s window
+      const delay = Math.floor(Math.random() * 25000) + 5000;
 
       setTimeout(() => {
         const currentRoom = roomsRef[roomCode];
@@ -759,7 +791,7 @@ const socketHandler = (io) => {
     if (bots.length === 0) return;
 
     bots.forEach(bot => {
-      const delay = Math.floor(Math.random() * 8000) + 4000; // fits inside the 20s window
+      const delay = Math.floor(Math.random() * 23000) + 12000;
 
       setTimeout(() => {
         const currentRoom = roomsRef[roomCode];
