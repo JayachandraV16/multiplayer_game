@@ -69,8 +69,8 @@ const Dashboard = () => {
               <h3 className="text-xl sm:text-2xl text-gold font-display font-bold mb-2 group-hover:gold-text-glow transition-all">
                 Sutradhar's Maze
               </h3>
-              <p className="text-xs sm:text-sm text-parchment-dark mb-6 leading-relaxed">
-                Dodge the <strong className="text-pink-500 font-semibold">Vismarana</strong> spirits of forgetfulness in Stepwells, Forts, and Temple Mandalas. Collect memory fragments and solve ancient riddles for coins and speed boosts!
+              <p className="text-xs sm:text-sm text-parchment-dark mb-6 leading-relaxed font-sans">
+                A solo maze adventure where you collect glowing memory fragments and answer history trivia. Watch out for the pink spirits of forgetfulness that chase you!
               </p>
             </div>
             <button
@@ -93,8 +93,8 @@ const Dashboard = () => {
               <h3 className="text-xl sm:text-2xl text-gold font-display font-bold mb-2 group-hover:gold-text-glow transition-all">
                 Lost Artifact Hunt
               </h3>
-              <p className="text-xs sm:text-sm text-parchment-dark mb-6 leading-relaxed">
-                Explore the ruins of ancient Nalanda University with 3-6 players. One player is secretly the <strong className="text-red-500 font-semibold">Chor (Thief)</strong>. Secure artifacts, follow the clues, and vote out the suspect before time runs out!
+              <p className="text-xs sm:text-sm text-parchment-dark mb-6 leading-relaxed font-sans">
+                A multiplayer social deduction game for 3-6 players. One player is secretly the Thief (Chor) stealing artifacts, while the guards (Sipahis) must secure them, find clues, and vote the thief out!
               </p>
             </div>
             <button

@@ -356,12 +356,15 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
             </div>
           </div>
 
-          <div className="bg-maroon-dark/50 border border-maroon-light p-3 rounded text-xs text-parchment-dark mb-6 leading-relaxed">
-            <strong className="text-gold block mb-1">How to Play:</strong>
-            - Explore the ruins of Nalanda. One player is secretly the <strong className="text-red-500">Chor (Thief)</strong>, the rest are <strong className="text-cyan-400">Sipahis (Guards)</strong>.
-            - Move with WASD or Arrow Keys. Walk onto coins and artifacts to collect them.
-            - Sipahis secure artifacts safely. The Chor secretly steals them, leaving a clue behind each time.
-            - When time runs out, discuss and vote out who you think the Chor is.
+          <div className="bg-maroon-dark/50 border border-maroon-light p-4 rounded text-xs text-parchment-dark mb-6 leading-relaxed text-left font-sans">
+            <strong className="text-gold block mb-2 text-sm">How to Play:</strong>
+            <ul className="list-disc pl-4 space-y-1.5">
+              <li><strong>Find the Thief:</strong> One player is secretly the <strong className="text-red-500">Chor (Thief)</strong>. Everyone else is a <strong className="text-cyan-400">Sipahi (Guard)</strong>.</li>
+              <li><strong>Controls:</strong> Move around the map using <strong>Arrow Keys</strong> or <strong>WASD</strong>. Walk over coins and artifacts to collect them.</li>
+              <li><strong>Guards (Sipahis):</strong> Secure all the artifacts. If you secure them all before any are stolen, you win instantly!</li>
+              <li><strong>Thief (Chor):</strong> Steal artifacts. Be careful: each theft leaves a <span className="text-red-400">red clue token</span> behind. If you steal enough artifacts, you win instantly!</li>
+              <li><strong>Accuse & Vote:</strong> If the timer runs out, the group enters a discussion chat. Vote for the player you think is the Thief. If the majority votes for the correct Thief, the Guards win. Otherwise, the Thief wins!</li>
+            </ul>
           </div>
 
           <div className="flex gap-4">
