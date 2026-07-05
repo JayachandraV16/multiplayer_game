@@ -51,7 +51,17 @@ const LostArtifactHunt = ({ onBackToDashboard }) => {
     });
 
     socket.on('roomUpdated', (roomData) => {
+      if (!roomData) return;
       setRoom(roomData);
+      
+      if (roomData.gameState === 'LOBBY') {
+        setFinalResults(null);
+      }
+      
+      if (roomData.gameState === 'RESULTS' && roomData.finalResults) {
+        setFinalResults(roomData.finalResults);
+      }
+
       // Full sync is authoritative: rebuild live positions from it.
       const positions = {};
       (roomData.players || []).forEach(p => { positions[p.id] = { row: p.row, col: p.col }; });

@@ -121,16 +121,18 @@ const socketHandler = (io) => {
         return socket.emit('errorMsg', 'Room not found.');
       }
 
-      if (room.gameState !== 'LOBBY') {
+      const existingPlayerIndex = room.players.findIndex(p => p.userId === userId);
+      const isReconnecting = existingPlayerIndex !== -1;
+
+      if (room.gameState !== 'LOBBY' && !isReconnecting) {
         return socket.emit('errorMsg', 'Game has already started in this room.');
       }
 
-      if (room.players.length >= 6) {
+      if (room.players.length >= 6 && !isReconnecting) {
         return socket.emit('errorMsg', 'Room is full (max 6 players).');
       }
 
-      const existingPlayerIndex = room.players.findIndex(p => p.userId === userId);
-      if (existingPlayerIndex !== -1) {
+      if (isReconnecting) {
         room.players[existingPlayerIndex].id = socket.id;
         room.players[existingPlayerIndex].disconnected = false;
       } else {
@@ -139,7 +141,23 @@ const socketHandler = (io) => {
 
       socket.join(code);
       io.to(code).emit('roomUpdated', getCleanRoom(room));
-      console.log(`User ${name} joined room: ${code}`);
+      console.log(`User ${name} joined room: ${code} (Reconnect: ${isReconnecting})`);
+
+      // If reconnecting during an active phase, send them the current state.
+      if (isReconnecting) {
+        if (room.gameState === 'PLAYING') {
+          const map = MAPS[room.mapId];
+          socket.emit('explorationStarted', {
+            mapId: room.mapId,
+            grid: map.grid,
+            timerVal: room.timerVal,
+          });
+        } else if (room.gameState === 'VOTING') {
+          socket.emit('votingStarted', { timerVal: room.timerVal });
+        } else if (room.gameState === 'RESULTS' && room.finalResults) {
+          socket.emit('gameEnded', room.finalResults);
+        }
+      }
     });
 
     // Add Bot
@@ -611,13 +629,16 @@ const socketHandler = (io) => {
       });
     }
 
-    io.to(roomCode).emit('gameEnded', {
+    const gameEndedData = {
       sipahiWin,
       reason,
       votedOutName: votedOutPlayer ? votedOutPlayer.name : 'Nobody (Skip/Tie)',
       chorName: chorPlayer ? chorPlayer.name : 'Unknown',
       playersResults: updatedPlayers,
-    });
+    };
+    room.finalResults = gameEndedData;
+
+    io.to(roomCode).emit('gameEnded', gameEndedData);
 
     setTimeout(() => {
       if (rooms[roomCode]) {
@@ -626,6 +647,7 @@ const socketHandler = (io) => {
         rooms[roomCode].coins = [];
         rooms[roomCode].clues = [];
         rooms[roomCode].chatMessages = [];
+        rooms[roomCode].finalResults = null;
         rooms[roomCode].players.forEach(p => {
           p.role = null;
           p.coinsCollected = 0;
